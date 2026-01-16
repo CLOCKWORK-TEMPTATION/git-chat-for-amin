@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitChat AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Backgrounds
+              base: '#0A0A0F',
+              'elevated-1': '#12121A',
+              'elevated-2': '#1A1C23',
+              'elevated-3': '#22242D',
+              surface: 'rgba(26, 28, 35, 0.7)',
+              
+              // Accents (Brand)
+              primary: {
+                DEFAULT: '#5A5296',
+                light: '#7A72B6',
+                dark: '#4A4280',
+                muted: '#3D3866'
+              },
+              secondary: {
+                DEFAULT: '#3DB89A',
+                light: '#5DCAB0',
+                dark: '#2D9A7E',
+                muted: '#2A7A66'
+              },
+              tertiary: {
+                DEFAULT: '#9A8EB3',
+                light: '#B0A6C7',
+                dark: '#7A6E93'
+              },
+
+              // Semantic
+              success: '#3DB89A',
+              warning: '#D4A853',
+              error: '#C75D5D',
+              info: '#5A5296',
+
+              // Text
+              'text-primary': '#FFFFFF',
+              'text-secondary': '#94A3B8',
+              'text-tertiary': '#64748B',
+              'text-disabled': '#475569',
+
+              // Borders
+              'border-subtle': 'rgba(255, 255, 255, 0.06)',
+              'border-default': 'rgba(255, 255, 255, 0.10)',
+              'border-strong': 'rgba(255, 255, 255, 0.15)',
+            },
+            backgroundImage: {
+              'gradient-aurora': 'linear-gradient(135deg, #5A5296 0%, #3DB89A 100%)',
+              'gradient-aurora-subtle': 'linear-gradient(135deg, rgba(90,82,150,0.3) 0%, rgba(61,184,154,0.3) 100%)',
+              'gradient-dark-fade': 'linear-gradient(180deg, #0A0A0F 0%, #1A1C23 100%)',
+            },
+            boxShadow: {
+              'glow-primary': '0 0 20px rgba(90, 82, 150, 0.15)',
+              'glow-secondary': '0 0 20px rgba(61, 184, 154, 0.12)',
+              'glass': '0 4px 24px rgba(0,0,0,0.4), 0 0 20px rgba(90,82,150,0.08)'
+            },
+            fontFamily: {
+              sans: ['IBM Plex Sans Arabic', 'Tajawal', 'Cairo', 'Inter', 'sans-serif'],
+              mono: ['IBM Plex Mono', 'monospace']
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'slide-up': 'slideUp 0.5s ease-out',
+              'slide-right': 'slideRight 0.5s ease-out',
+              'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              slideRight: {
+                '0%': { transform: 'translateX(-20px)', opacity: '0' },
+                '100%': { transform: 'translateX(0)', opacity: '1' },
+              },
+              shake: {
+                '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700&family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+      body {
+        font-family: 'IBM Plex Sans Arabic', 'Tajawal', 'Cairo', sans-serif;
+        background-color: #0A0A0F;
+        color: #94A3B8;
+      }
+      
+      /* Styled Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #0A0A0F; 
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #1A1C23; 
+        border-radius: 4px;
+        border: 1px solid #0A0A0F;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: #5A5296; 
+      }
+
+      /* Firefox scrollbar */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #1A1C23 #0A0A0F;
+      }
+
+      /* Override Highlight.js background to match glass theme */
+      pre code.hljs {
+        background: transparent !important;
+        padding: 0;
+      }
+      
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #2D3039;
+        border-radius: 4px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "mermaid": "https://esm.sh/mermaid@10.9.0",
+    "d3": "https://esm.sh/d3@7",
+    "highlight.js": "https://esm.sh/highlight.js@11.9.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
