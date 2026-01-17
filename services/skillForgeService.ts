@@ -1,17 +1,16 @@
+import { GoogleGenAI } from '@google/genai'
+import { Challenge, SubmissionResult, ContextSource, AiModelId } from '../types'
 
-import { GoogleGenAI } from "@google/genai";
-import { Challenge, SubmissionResult, ContextSource, AiModelId } from '../types';
-
-let aiClient: GoogleGenAI | null = null;
+let aiClient: GoogleGenAI | null = null
 
 export const initSkillForgeService = (apiKey: string) => {
-    aiClient = new GoogleGenAI({ apiKey });
-};
+    aiClient = new GoogleGenAI({ apiKey })
+}
 
 // Helper to clean Markdown code blocks from JSON strings
 const cleanJson = (text: string) => {
-    return text.replace(/```json\n?|\n?```/g, '').trim();
-};
+    return text.replace(/```json\n?|\n?```/g, '').trim()
+}
 
 const CHALLENGE_SYSTEM_PROMPT = `
 You are "SkillForge", an advanced AI Technical Mentor.
@@ -33,7 +32,7 @@ Return ONLY a JSON object matching this structure:
   "relatedTags": ["React", "Security", "Algorithms"],
   "xpPoints": 50
 }
-`;
+`
 
 const EVALUATION_SYSTEM_PROMPT = `
 You are a Code Judge. Evaluate the user's submission against the challenge.
@@ -51,14 +50,14 @@ Return ONLY a JSON object:
   "explanation": "Why is it correct/incorrect? Reference the concept.",
   "xpEarned": number (If correct, return full points. If partially correct, return partial points)
 }
-`;
+`
 
 export const generateContextualChallenge = async (
     context: string,
     source: ContextSource,
     modelId: AiModelId
 ): Promise<Challenge> => {
-    if (!aiClient) throw new Error("SkillForge AI not initialized");
+    if (!aiClient) throw new Error('SkillForge AI not initialized')
 
     const prompt = `
     Analyze this context from a ${source.type} (Timestamp/Line: ${source.timestampOrLine || 'N/A'}):
@@ -68,37 +67,37 @@ export const generateContextualChallenge = async (
     """
 
     Generate a single active learning challenge.
-    `;
+    `
 
     try {
         const response = await aiClient.models.generateContent({
             model: modelId,
             config: {
                 systemInstruction: CHALLENGE_SYSTEM_PROMPT,
-                responseMimeType: "application/json",
+                responseMimeType: 'application/json',
             },
-            contents: { parts: [{ text: prompt }] }
-        });
+            contents: { parts: [{ text: prompt }] },
+        })
 
-        const raw = JSON.parse(cleanJson(response.text || "{}"));
-        
+        const raw = JSON.parse(cleanJson(response.text || '{}'))
+
         return {
             id: Date.now().toString(),
             source,
-            ...raw
-        };
+            ...raw,
+        }
     } catch (e) {
-        console.error("SkillForge Generation Failed", e);
-        throw new Error("Failed to generate challenge. Please try again.");
+        console.error('SkillForge Generation Failed', e)
+        throw new Error('Failed to generate challenge. Please try again.')
     }
-};
+}
 
 export const evaluateSubmission = async (
     challenge: Challenge,
     userSubmission: string,
     modelId: AiModelId
 ): Promise<SubmissionResult> => {
-    if (!aiClient) throw new Error("SkillForge AI not initialized");
+    if (!aiClient) throw new Error('SkillForge AI not initialized')
 
     const prompt = `
     **Challenge:**
@@ -111,29 +110,28 @@ export const evaluateSubmission = async (
     **Max Points:** ${challenge.xpPoints}
 
     Evaluate this.
-    `;
+    `
 
     try {
         const response = await aiClient.models.generateContent({
             model: modelId,
             config: {
                 systemInstruction: EVALUATION_SYSTEM_PROMPT,
-                responseMimeType: "application/json",
+                responseMimeType: 'application/json',
             },
-            contents: { parts: [{ text: prompt }] }
-        });
+            contents: { parts: [{ text: prompt }] },
+        })
 
-        const result = JSON.parse(cleanJson(response.text || "{}"));
-        return result as SubmissionResult;
-
+        const result = JSON.parse(cleanJson(response.text || '{}'))
+        return result as SubmissionResult
     } catch (e) {
-        console.error("Evaluation Failed", e);
+        console.error('Evaluation Failed', e)
         // Fallback result
         return {
             isCorrect: false,
-            feedback: "Error evaluating submission.",
-            explanation: "AI service failed.",
-            xpEarned: 0
-        };
+            feedback: 'Error evaluating submission.',
+            explanation: 'AI service failed.',
+            xpEarned: 0,
+        }
     }
-};
+}

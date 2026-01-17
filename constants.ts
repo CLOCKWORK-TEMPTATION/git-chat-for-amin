@@ -1,14 +1,38 @@
-export const MAX_FILES_TO_FETCH = 60; // Increased for RAG
-export const MAX_FILE_SIZE_BYTES = 100000; // 100KB limit
-export const CHUNK_SIZE = 1000;
-export const CHUNK_OVERLAP = 200;
-export const EMBEDDING_MODEL = 'text-embedding-004';
+export const MAX_FILES_TO_FETCH = 60 // Increased for RAG
+export const MAX_FILE_SIZE_BYTES = 100000 // 100KB limit
+export const CHUNK_SIZE = 1000
+export const CHUNK_OVERLAP = 200
+export const EMBEDDING_MODEL = 'text-embedding-004'
 
 export const ALLOWED_EXTENSIONS = [
-  '.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.c', '.cpp', '.h', '.cs', 
-  '.go', '.rs', '.php', '.rb', '.swift', '.kt', '.dart', '.html', '.css', 
-  '.json', '.md', '.txt', '.yml', '.yaml', '.sql', '.prisma', '.xml'
-];
+    '.js',
+    '.jsx',
+    '.ts',
+    '.tsx',
+    '.py',
+    '.java',
+    '.c',
+    '.cpp',
+    '.h',
+    '.cs',
+    '.go',
+    '.rs',
+    '.php',
+    '.rb',
+    '.swift',
+    '.kt',
+    '.dart',
+    '.html',
+    '.css',
+    '.json',
+    '.md',
+    '.txt',
+    '.yml',
+    '.yaml',
+    '.sql',
+    '.prisma',
+    '.xml',
+]
 
 export const SYSTEM_INSTRUCTION = `
 You are an expert Senior Software Engineer and Code Analyst.
@@ -22,7 +46,7 @@ Guidelines:
 2.  **Context**: Use the provided "Relevant Context" sections to answer the question. If the answer isn't in the context, use your general knowledge but mention that the specific details weren't found in the current context.
 3.  **Tone**: Professional, helpful, and technical.
 4.  **Citations**: When answering from a video transcript, try to mention the timestamp (e.g., [02:30]) if available in the context to help the user locate the information.
-`;
+`
 
 export const REVIEWER_SYSTEM_INSTRUCTION = `
 You are a grumpy, highly critical Senior Staff Engineer acting as a Code Reviewer. 
@@ -53,7 +77,7 @@ Example of a patch output:
 - export const calculate = (a, b) => a + b;
 + export const calculate = (a: number, b: number): number => a + b;
 \`\`\`
-`;
+`
 
 export const ONTOLOGY_SYSTEM_INSTRUCTION = `
 You are a Semantic Architect responsible for building a Dynamic Technical Knowledge Graph (DTKG).
@@ -84,4 +108,4 @@ Return ONLY a valid JSON object with the following structure:
     { "source": "node_id", "target": "node_id", "relation": "IMPORTS|DEFINES|RELATED_TO|RISK_IN" }
   ]
 }
-`;
+`
