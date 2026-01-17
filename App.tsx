@@ -11,6 +11,7 @@ import {
     Challenge,
     UserProfile,
     SubmissionResult,
+    AiModelId,
 } from './types'
 import {
     parseGithubUrl,
@@ -179,9 +180,16 @@ const App: React.FC = () => {
 
     // Settings with Persistence and Safe Default Merging
     const [settings, setSettings] = useState<AppSettings>(() => {
+        const defaultModelId: AiModelId = 'gemini-3-flash-preview'
         const defaultSettings: AppSettings = {
             githubToken: '',
-            modelId: 'gemini-3-flash-preview',
+            modelId: defaultModelId,
+            modelIds: {
+                github: defaultModelId,
+                web: defaultModelId,
+                youtube: defaultModelId,
+                local: defaultModelId,
+            },
             isReviewerMode: false,
             enableThinking: false,
         }
@@ -189,9 +197,23 @@ const App: React.FC = () => {
         const saved = localStorage.getItem('gitChatSettings')
         if (saved) {
             try {
-                const parsed = JSON.parse(saved)
-                // Merge with defaults to ensure all keys exist and types are correct
-                return { ...defaultSettings, ...parsed }
+                const parsed = JSON.parse(saved) as Partial<AppSettings>
+                const fallbackModelId = parsed.modelId || defaultModelId
+                const mergedModelIds = {
+                    ...defaultSettings.modelIds,
+                    ...(parsed.modelIds || {}),
+                }
+                ;(['github', 'web', 'youtube', 'local'] as const).forEach((key) => {
+                    if (!mergedModelIds[key]) {
+                        mergedModelIds[key] = fallbackModelId
+                    }
+                })
+                return {
+                    ...defaultSettings,
+                    ...parsed,
+                    modelId: parsed.modelId || defaultModelId,
+                    modelIds: mergedModelIds,
+                }
             } catch (e) {
                 console.error('Failed to load settings, falling back to defaults', e)
             }
@@ -335,6 +357,14 @@ const App: React.FC = () => {
         URL.revokeObjectURL(url)
     }
 
+    const resolveModelIdForInput = (mode: InputMode): AiModelId => {
+        if (mode === 'github' || mode === 'package') return settings.modelIds.github
+        if (mode === 'url' || mode === 'stackoverflow') return settings.modelIds.web
+        if (mode === 'youtube') return settings.modelIds.youtube
+        if (mode === 'local') return settings.modelIds.local
+        return settings.modelId
+    }
+
     const handleIgniteChallenge = async () => {
         if (status !== AppStatus.READY) return
         setIsIgniteLoading(true)
@@ -379,7 +409,7 @@ const App: React.FC = () => {
                 source = { type: 'FILE', id: 'Chat History' }
             }
 
-            const challenge = await generateContextualChallenge(context, source, settings.modelId)
+            const challenge = await generateContextualChallenge(context, source, resolveModelIdForInput(inputMode))
             setActiveChallenge(challenge)
         } catch (error) {
             console.error('Ignite failed', error)
@@ -392,7 +422,7 @@ const App: React.FC = () => {
     const handleChallengeSubmit = async (submission: string): Promise<SubmissionResult> => {
         if (!activeChallenge) throw new Error('No active challenge')
 
-        const result = await evaluateSubmission(activeChallenge, submission, settings.modelId)
+        const result = await evaluateSubmission(activeChallenge, submission, resolveModelIdForInput(inputMode))
 
         if (result.isCorrect) {
             // Update Profile
@@ -434,7 +464,7 @@ const App: React.FC = () => {
         setMessages((prev) => [...prev, userMsg])
 
         try {
-            const responseText = await sendMessageToGemini(prompt, '')
+        const responseText = await sendMessageToGemini(prompt, '')
             const modelMsg: Message = {
                 id: Date.now().toString(),
                 role: 'model',
@@ -497,7 +527,7 @@ const App: React.FC = () => {
         setStatusMessage('بناء البوصلة الدلالية (Knowledge Graph)...')
 
         // Non-blocking graph build
-        buildKnowledgeGraph(files, repoName, settings.modelId).then((graph) => {
+        buildKnowledgeGraph(files, repoName, resolveModelIdForInput(inputMode)).then((graph) => {
             setKnowledgeGraph(graph)
         })
     }
@@ -534,7 +564,12 @@ const App: React.FC = () => {
             .map((n) => n.path)
             .join('\n')}`
 
-        await startChatSession(settings.modelId, structureContext, settings.isReviewerMode, settings.enableThinking)
+        await startChatSession(
+            resolveModelIdForInput('github'),
+            structureContext,
+            settings.isReviewerMode,
+            settings.enableThinking
+        )
 
         setStatus(AppStatus.READY)
         setMessages([
@@ -586,7 +621,12 @@ const App: React.FC = () => {
             .map((n) => n.path)
             .join('\n')}`
 
-        await startChatSession(settings.modelId, structureContext, settings.isReviewerMode, settings.enableThinking)
+        await startChatSession(
+            resolveModelIdForInput('local'),
+            structureContext,
+            settings.isReviewerMode,
+            settings.enableThinking
+        )
 
         setStatus(AppStatus.READY)
         setMessages([
@@ -613,7 +653,12 @@ const App: React.FC = () => {
 
         setStatusMessage('جاري تهيئة المحلل...')
         const context = `Documentation URL: ${url}\nTitle: ${title}`
-        await startChatSession(settings.modelId, context, settings.isReviewerMode, settings.enableThinking)
+        await startChatSession(
+            resolveModelIdForInput('url'),
+            context,
+            settings.isReviewerMode,
+            settings.enableThinking
+        )
 
         setStatus(AppStatus.READY)
         setMessages([
@@ -649,7 +694,12 @@ const App: React.FC = () => {
         )
 
         const context = `Video Title: ${info.title}\nChannel: ${info.channel}`
-        await startChatSession(settings.modelId, context, settings.isReviewerMode, settings.enableThinking)
+        await startChatSession(
+            resolveModelIdForInput('youtube'),
+            context,
+            settings.isReviewerMode,
+            settings.enableThinking
+        )
 
         setStatus(AppStatus.READY)
         setMessages([

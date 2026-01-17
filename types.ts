@@ -58,9 +58,12 @@ export type AiModelId =
     | 'gemini-2.5-flash-preview-09-2025'
     | 'gemini-2.5-flash-lite-preview-02-05'
 
+export type ModelSource = 'github' | 'web' | 'youtube' | 'local'
+
 export interface AppSettings {
     githubToken: string
     modelId: AiModelId
+    modelIds: Record<ModelSource, AiModelId>
     isReviewerMode: boolean
     enableThinking: boolean
 }

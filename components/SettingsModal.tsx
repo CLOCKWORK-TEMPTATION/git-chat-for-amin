@@ -1,5 +1,5 @@
 import React from 'react'
-import { AppSettings, AVAILABLE_MODELS, AiModelId } from '../types'
+import { AppSettings, AVAILABLE_MODELS, AiModelId, ModelSource } from '../types'
 
 interface SettingsModalProps {
     settings: AppSettings
@@ -8,6 +8,25 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onUpdate, onClose }) => {
+    const sources: { key: ModelSource; label: string; description: string }[] = [
+        { key: 'github', label: 'GitHub', description: 'تحليل المستودعات والحزم البرمجية' },
+        { key: 'web', label: 'Web', description: 'الروابط الخارجية وStackOverflow' },
+        { key: 'youtube', label: 'YouTube', description: 'تفريغ الفيديوهات والتحليل' },
+        { key: 'local', label: 'Local', description: 'المجلدات المحلية' },
+    ]
+
+    const canUseThinking = Object.values(settings.modelIds || {}).includes('gemini-3-pro-preview')
+
+    const handleModelChange = (source: ModelSource, modelId: AiModelId) => {
+        onUpdate({
+            ...settings,
+            modelId,
+            modelIds: {
+                ...settings.modelIds,
+                [source]: modelId,
+            },
+        })
+    }
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <div className="bg-elevated-3 w-full max-w-md rounded-2xl border border-border-subtle shadow-2xl flex flex-col overflow-hidden">
@@ -81,7 +100,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onUpdate, onClo
 
                     {/* Thinking Mode Toggle */}
                     <div
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all ${settings.modelId === 'gemini-3-pro-preview' ? 'bg-base border-border-subtle' : 'bg-base/30 border-transparent opacity-50 cursor-not-allowed'}`}
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all ${canUseThinking ? 'bg-base border-border-subtle' : 'bg-base/30 border-transparent opacity-50 cursor-not-allowed'}`}
                     >
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-tertiary/10 rounded-lg text-tertiary">
@@ -106,7 +125,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onUpdate, onClo
                                 type="checkbox"
                                 className="sr-only peer"
                                 checked={settings.enableThinking}
-                                disabled={settings.modelId !== 'gemini-3-pro-preview'}
+                                disabled={!canUseThinking}
                                 onChange={(e) => onUpdate({ ...settings, enableThinking: e.target.checked })}
                             />
                             <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-tertiary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tertiary"></div>
@@ -127,34 +146,57 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onUpdate, onClo
                         />
                     </div>
 
-                    {/* AI Model */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium text-text-secondary">نموذج الذكاء الاصطناعي</label>
-                        <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                            {AVAILABLE_MODELS.map((model) => (
-                                <div
-                                    key={model.id}
-                                    onClick={() => onUpdate({ ...settings, modelId: model.id })}
-                                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
-                                        settings.modelId === model.id
-                                            ? 'bg-primary/10 border-primary/50 ring-1 ring-primary/30'
-                                            : 'bg-base border-border-subtle hover:border-text-secondary/30'
-                                    }`}
-                                >
-                                    <div
-                                        className={`w-4 h-4 mt-0.5 rounded-full border flex items-center justify-center ${settings.modelId === model.id ? 'border-primary' : 'border-text-secondary'}`}
-                                    >
-                                        {settings.modelId === model.id && (
-                                            <div className="w-2 h-2 rounded-full bg-primary"></div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <div
-                                            className={`text-sm font-medium ${settings.modelId === model.id ? 'text-white' : 'text-text-secondary'}`}
-                                        >
-                                            {model.name}
+                    {/* AI Models Per Source */}
+                    <div className="space-y-4">
+                        <label className="text-sm font-medium text-text-secondary">نماذج الذكاء الاصطناعي حسب المصدر</label>
+                        <div className="space-y-4 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                            {sources.map((source) => (
+                                <div key={source.key} className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm font-medium text-white">{source.label}</div>
+                                            <div className="text-[10px] text-text-secondary">{source.description}</div>
                                         </div>
-                                        <div className="text-xs text-slate-500 mt-0.5">{model.description}</div>
+                                        <span className="text-[10px] text-slate-500" dir="ltr">
+                                            {settings.modelIds?.[source.key]}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {AVAILABLE_MODELS.map((model) => (
+                                            <div
+                                                key={`${source.key}-${model.id}`}
+                                                onClick={() => handleModelChange(source.key, model.id)}
+                                                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
+                                                    settings.modelIds?.[source.key] === model.id
+                                                        ? 'bg-primary/10 border-primary/50 ring-1 ring-primary/30'
+                                                        : 'bg-base border-border-subtle hover:border-text-secondary/30'
+                                                }`}
+                                            >
+                                                <div
+                                                    className={`w-4 h-4 mt-0.5 rounded-full border flex items-center justify-center ${
+                                                        settings.modelIds?.[source.key] === model.id
+                                                            ? 'border-primary'
+                                                            : 'border-text-secondary'
+                                                    }`}
+                                                >
+                                                    {settings.modelIds?.[source.key] === model.id && (
+                                                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div
+                                                        className={`text-sm font-medium ${
+                                                            settings.modelIds?.[source.key] === model.id
+                                                                ? 'text-white'
+                                                                : 'text-text-secondary'
+                                                        }`}
+                                                    >
+                                                        {model.name}
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 mt-0.5">{model.description}</div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
